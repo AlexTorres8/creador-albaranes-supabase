@@ -97,6 +97,7 @@ Abre tu navegador en http://localhost:5173 y ¡listo! 🎉
 
 ## 📂 Estructura del Proyecto
 
+```bash
 /
 ├── public/              # Archivos estáticos (favicon, etc.)
 ├── src/
@@ -107,6 +108,7 @@ Abre tu navegador en http://localhost:5173 y ¡listo! 🎉
 │   └── main.jsx         # Punto de entrada
 ├── eslint.config.js     # Configuración de calidad de código
 └── package.json         # Dependencias del proyecto
+```
 
 ## 🤝 Contribución
 ¡Las contribuciones son bienvenidas! Si tienes ideas para mejorar este generador de albaranes:
