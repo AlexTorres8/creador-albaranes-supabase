@@ -93,7 +93,7 @@ VITE_SUPABASE_ANON_KEY=tu-clave-anonima-publica
 npm run dev
 
 Abre tu navegador en http://localhost:5173 y ¡listo! 🎉
-
+```
 
 ## 📂 Estructura del Proyecto
 
@@ -121,7 +121,7 @@ Abre tu navegador en http://localhost:5173 y ¡listo! 🎉
 
 5. Abre un Pull Request.
 
-##📄 Licencia
+## 📄 Licencia
 Este proyecto está bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.
 
 <p align="center"> Hecho con ❤️ y código limpio </p>
