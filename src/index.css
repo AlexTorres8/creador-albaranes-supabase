@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- ESTILOS SOLO PARA LA IMPRESORA / PDF --- */
+@media print {
+
+  /* Ocultar botones y elementos de interfaz */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Forzar fondo blanco y quitar márgenes del navegador */
+  body {
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Resetear contenedores para que ocupen todo el ancho del papel */
+  .min-h-screen {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .max-w-4xl {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    /* Un poco de margen en el papel queda bien */
+  }
+
+  /* Hacer que los inputs parezcan texto normal */
+  input,
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    resize: none;
+    padding: 0 !important;
+  }
+
+  /* Forzar que se impriman los colores de fondo (ej: cabecera gris de tabla) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* TRUCO: Forzamos el ancho de escritorio al imprimir aunque sea desde móvil */
+  .max-w-4xl {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Forzamos que la tabla se vea completa al imprimir */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .min-w-\[600px\] {
+    min-width: 0 !important;
+    /* Reseteamos para que ocupe el folio */
+    width: 100% !important;
+  }
+}
