@@ -16,6 +16,7 @@ function App() {
   const [observaciones, setObservaciones] = useState('')
   const [catalogo, setCatalogo] = useState([])
   const [guardando, setGuardando] = useState(false)
+  const [tieneIva, setTieneIva] = useState(true)
 
   // --- NUEVO: CALCULAR PRÓXIMO NÚMERO ---
   useEffect(() => {
@@ -80,7 +81,7 @@ function App() {
   const borrarLinea = (id) => setLineas(lineas.filter(linea => linea.id !== id))
 
   const baseImponible = lineas.reduce((sum, linea) => sum + (linea.cantidad * linea.precio), 0)
-  const iva = baseImponible * 0.21
+  const iva = tieneIva ? (baseImponible * 0.21) : 0
   const total = baseImponible + iva
 
   const guardarEnNube = async () => {
@@ -95,6 +96,7 @@ function App() {
           numero_albaran: numeroAlbaran,
           fecha: fecha,
           observaciones: observaciones,
+          tiene_iva: tieneIva, 
           total: total
         }]).select()
 
@@ -228,9 +230,38 @@ function App() {
           </div>
 
           <div className="w-full md:w-1/2 text-right space-y-2 pt-0 md:pt-8">
-            <div className="flex justify-between text-gray-700 font-bold"><span>SUBTOTAL:</span><span>{baseImponible.toFixed(2)} €</span></div>
-            <div className="flex justify-between text-gray-700 font-bold"><span>IVA (21%):</span><span>{iva.toFixed(2)} €</span></div>
-            <div className="flex justify-between text-xl font-bold text-blue-600 pt-2 border-t mt-2"><span>TOTAL:</span><span>{total.toFixed(2)} €</span></div>
+            
+            {/* <--- NUEVO: Checkbox para activar/desactivar IVA */}
+            <div className="mb-4 flex justify-end items-center gap-2 no-print">
+              <label className="text-sm font-medium text-gray-700 cursor-pointer" htmlFor="iva-switch">
+                Aplicar IVA (21%)
+              </label>
+              <input 
+                id="iva-switch"
+                type="checkbox" 
+                checked={tieneIva}
+                onChange={(e) => setTieneIva(e.target.checked)}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex justify-between text-gray-700 font-bold">
+              <span>SUBTOTAL:</span>
+              <span>{baseImponible.toFixed(2)} €</span>
+            </div>
+            
+            {/* <--- CAMBIO: Solo mostramos la línea de IVA si está activado */}
+            {tieneIva && (
+              <div className="flex justify-between text-gray-700 font-bold">
+                <span>IVA (21%):</span>
+                <span>{iva.toFixed(2)} €</span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-xl font-bold text-blue-600 pt-2 border-t mt-2">
+              <span>TOTAL:</span>
+              <span>{total.toFixed(2)} €</span>
+            </div>
           </div>
         </div>
 
