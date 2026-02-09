@@ -16,19 +16,22 @@ function App() {
   const [observaciones, setObservaciones] = useState('')
   const [catalogo, setCatalogo] = useState([])
   const [guardando, setGuardando] = useState(false)
+  
+  // ESTADOS DE CONFIGURACIÓN
   const [tieneIva, setTieneIva] = useState(true)
+  const [mostrarLogo, setMostrarLogo] = useState(true)
+  const [tipoDocumento, setTipoDocumento] = useState('ALBARÁN') // <--- NUEVO
 
-  // --- NUEVO: CALCULAR PRÓXIMO NÚMERO ---
+  // --- CALCULAR PRÓXIMO NÚMERO ---
   useEffect(() => {
     const calcularSiguienteNumero = async () => {
       const yearActual = new Date().getFullYear()
 
-      // Buscamos el último albarán creado en la base de datos que empiece por el año actual
       const { data, error } = await supabase
         .from('albaranes')
         .select('numero_albaran')
-        .ilike('numero_albaran', `${yearActual}-%`) // Filtra los que empiecen por "2025-"
-        .order('id', { ascending: false }) // Ordena del más nuevo al más viejo
+        .ilike('numero_albaran', `${yearActual}-%`)
+        .order('id', { ascending: false })
         .limit(1)
 
       if (error) {
@@ -37,22 +40,18 @@ function App() {
       }
 
       if (data && data.length > 0) {
-        // Si existe un último albarán (ej: "2025-042")
         const ultimoNumero = data[0].numero_albaran
-        const partes = ultimoNumero.split('-') // Separa ["2025", "042"]
-        const secuencia = parseInt(partes[1]) // Convierte "042" a número 42
-
-        // Sumamos 1 y rellenamos con ceros a la izquierda (pad)
+        const partes = ultimoNumero.split('-')
+        const secuencia = parseInt(partes[1])
         const nuevaSecuencia = (secuencia + 1).toString().padStart(3, '0')
         setNumeroAlbaran(`${yearActual}-${nuevaSecuencia}`)
       } else {
-        // Si es el primero del año
         setNumeroAlbaran(`${yearActual}-003`)
       }
     }
 
     calcularSiguienteNumero()
-  }, []) // Se ejecuta solo al abrir la página
+  }, [])
 
   useEffect(() => {
     const cargarProductos = async () => {
@@ -97,6 +96,7 @@ function App() {
           fecha: fecha,
           observaciones: observaciones,
           tiene_iva: tieneIva, 
+          tipo_documento: tipoDocumento, // <--- NUEVO: Guardamos el tipo
           total: total
         }]).select()
 
@@ -113,7 +113,7 @@ function App() {
 
       const { error: lineasError } = await supabase.from('lineas_albaran').insert(lineasParaGuardar)
       if (lineasError) throw lineasError
-      alert('¡Albarán guardado! ☁️')
+      alert(`¡${tipoDocumento} guardado correctamente! ☁️`)
     } catch (error) {
       alert('Error: ' + error.message)
     } finally {
@@ -126,26 +126,65 @@ function App() {
   }
 
   return (
-    // CAMBIO RESPONSIVE: Padding menor en móvil (p-4) y mayor en escritorio (md:p-8)
     <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans print:p-0">
 
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-4 md:p-8 print:shadow-none print:w-full">
 
-        {/* CABECERA: Flex-col en móvil, Flex-row en escritorio Y EN IMPRESIÓN */}
+        {/* CABECERA */}
         <div className="flex flex-col md:flex-row print:flex-row justify-between items-start mb-8 gap-6 md:gap-0 print:gap-0">
 
           {/* LADO IZQUIERDO: LOGO */}
-          <div className="w-full md:w-auto print:w-auto">
-            <img
-              src={logoEmpresa}
-              alt="Logo TR Servicios del Agua"
-              className="w-64 md:w-80 h-auto object-contain mb-4 md:mb-0 print:mb-0 print:w-64"
-            />
+          <div className="w-full md:w-auto print:w-auto flex flex-col items-start">
+            <div className="mb-2 no-print">
+              <label className="inline-flex items-center cursor-pointer text-xs text-gray-500 hover:text-gray-800 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={mostrarLogo} 
+                  onChange={(e) => setMostrarLogo(e.target.checked)}
+                  className="mr-2 cursor-pointer"
+                />
+                Mostrar Logo
+              </label>
+            </div>
+
+            {mostrarLogo && (
+              <img
+                src={logoEmpresa}
+                alt="Logo Empresa"
+                className="w-64 md:w-80 h-auto object-contain mb-4 md:mb-0 print:mb-0 print:w-64"
+              />
+            )}
+            
+            {!mostrarLogo && <div className="h-16 w-64 md:w-80"></div>}
           </div>
 
-          {/* LADO DERECHO: DATOS DEL ALBARÁN */}
+          {/* LADO DERECHO: DATOS DEL DOCUMENTO */}
           <div className="w-full md:w-auto print:w-auto text-left md:text-right print:text-right">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 uppercase">ALBARÁN</h2>
+            
+            {/* TÍTULO INTERACTIVO: CLICK PARA CAMBIAR */}
+            <div className="flex flex-col items-start md:items-end print:items-end mb-2">
+               <div className="relative group cursor-pointer">
+                  {/* El texto visible */}
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800 uppercase border-b-2 border-transparent hover:border-gray-300 transition-colors">
+                    {tipoDocumento}
+                  </h2>
+                  
+                  {/* El selector invisible superpuesto */}
+                  <select 
+                    value={tipoDocumento}
+                    onChange={(e) => setTipoDocumento(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer no-print appearance-none"
+                    title="Clic para cambiar tipo de documento"
+                  >
+                    <option value="ALBARÁN">ALBARÁN</option>
+                    <option value="PRESUPUESTO">PRESUPUESTO</option>
+                    <option value="FACTURA">FACTURA</option>
+                  </select>
+
+                  {/* Icono de ayuda visual (solo pantalla) */}
+                  <span className="absolute -right-4 top-0 text-xs text-gray-400 opacity-0 group-hover:opacity-100 no-print">🔽</span>
+               </div>
+            </div>
 
             <div className="flex items-center justify-start md:justify-end print:justify-end mt-1">
               <span className="text-gray-700">Nº:</span>
@@ -167,7 +206,7 @@ function App() {
           </div>
         </div>
 
-        {/* DATOS: Grid de 1 columna en móvil, 2 en escritorio */}
+        {/* DATOS CLIENTE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div>
             <h3 className="text-lg font-bold text-gray-800 mb-2 uppercase border-b pb-1">DATOS CLIENTE</h3>
@@ -186,9 +225,8 @@ function App() {
           </div>
         </div>
 
-        {/* TABLA: Contenedor con scroll horizontal para móvil */}
+        {/* TABLA DE PRODUCTOS */}
         <div className="mb-8 border-t border-l border-r border-gray-300 overflow-x-auto">
-          {/* Forzamos un ancho mínimo (min-w) para que la tabla no se aplaste en móvil */}
           <div className="min-w-[600px]">
             <div className="grid grid-cols-12 bg-gray-500 text-white font-bold text-sm uppercase py-2 px-2 print:bg-gray-200 print:text-black">
               <div className="col-span-2 text-center">CANT.</div>
@@ -198,19 +236,51 @@ function App() {
             </div>
 
             {lineas.map((linea) => (
-              <div key={linea.id} className="grid grid-cols-12 items-center border-b border-gray-300 py-2 px-2 group">
+              <div key={linea.id} className="grid grid-cols-12 items-start border-b border-gray-300 py-2 px-2 group">
                 <div className="col-span-2">
-                  <input type="number" value={linea.cantidad} onChange={(e) => actualizarLinea(linea.id, 'cantidad', Number(e.target.value))} className="w-full text-center bg-transparent focus:outline-none" />
+                  <input 
+                    type="number" 
+                    value={linea.cantidad} 
+                    onChange={(e) => actualizarLinea(linea.id, 'cantidad', Number(e.target.value))} 
+                    className="w-full text-center bg-transparent focus:outline-none" 
+                  />
                 </div>
                 <div className="col-span-6 relative">
-                  <input type="text" list="lista-productos" value={linea.concepto} onChange={(e) => actualizarLinea(linea.id, 'concepto', e.target.value)} className="w-full bg-transparent focus:outline-none" placeholder="Escribe..." />
+                  <textarea
+                    value={linea.concepto}
+                    placeholder="Escribe..."
+                    rows={1}
+                    className="w-full bg-transparent focus:outline-none resize-none overflow-hidden"
+                    onChange={(e) => {
+                      actualizarLinea(linea.id, 'concepto', e.target.value);
+                      e.target.style.height = 'auto'; 
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = el.scrollHeight + 'px';
+                      }
+                    }}
+                  />
                 </div>
                 <div className="col-span-2 text-right pr-4">
-                  <input type="number" value={linea.precio} onChange={(e) => actualizarLinea(linea.id, 'precio', Number(e.target.value))} className="w-full text-right bg-transparent focus:outline-none" />
+                  <input 
+                    type="number" 
+                    value={linea.precio} 
+                    onChange={(e) => actualizarLinea(linea.id, 'precio', Number(e.target.value))} 
+                    className="w-full text-right bg-transparent focus:outline-none" 
+                  />
                 </div>
-                <div className="col-span-2 text-right font-medium pr-4">{(linea.cantidad * linea.precio).toFixed(2)} €</div>
-
-                <button onClick={() => borrarLinea(linea.id)} className="absolute right-2 text-red-500 opacity-0 group-hover:opacity-100 font-bold no-print text-xl">&times;</button>
+                <div className="col-span-2 text-right font-medium pr-4">
+                  {(linea.cantidad * linea.precio).toFixed(2)} €
+                </div>
+                <button 
+                  onClick={() => borrarLinea(linea.id)} 
+                  className="absolute right-2 text-red-500 opacity-0 group-hover:opacity-100 font-bold no-print text-xl top-2"
+                >
+                  &times;
+                </button>
               </div>
             ))}
           </div>
@@ -222,7 +292,7 @@ function App() {
 
         <datalist id="lista-productos">{catalogo.map(prod => (<option key={prod.id} value={prod.nombre}>{prod.precio} €</option>))}</datalist>
 
-        {/* TOTALES: Flex-col en móvil */}
+        {/* TOTALES */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-8">
           <div className="w-full md:w-1/2">
             <h3 className="text-lg font-bold text-gray-800 mb-2 uppercase">OBSERVACIONES:</h3>
@@ -230,8 +300,6 @@ function App() {
           </div>
 
           <div className="w-full md:w-1/2 text-right space-y-2 pt-0 md:pt-8">
-            
-            {/* <--- NUEVO: Checkbox para activar/desactivar IVA */}
             <div className="mb-4 flex justify-end items-center gap-2 no-print">
               <label className="text-sm font-medium text-gray-700 cursor-pointer" htmlFor="iva-switch">
                 Aplicar IVA (21%)
@@ -250,7 +318,6 @@ function App() {
               <span>{baseImponible.toFixed(2)} €</span>
             </div>
             
-            {/* <--- CAMBIO: Solo mostramos la línea de IVA si está activado */}
             {tieneIva && (
               <div className="flex justify-between text-gray-700 font-bold">
                 <span>IVA (21%):</span>
@@ -265,19 +332,7 @@ function App() {
           </div>
         </div>
 
-        {/* FIRMAS: Stack en móvil, columnas en escritorio 
-        <div className="flex flex-col md:flex-row justify-between mt-12 gap-12 md:gap-0 break-inside-avoid">
-          <div className="w-full md:w-5/12 text-center">
-            <div className="h-16 mb-2 border-b-2 border-gray-400"></div>
-            <p className="font-bold text-gray-800 uppercase text-sm">FIRMA TÉCNICO</p>
-          </div>
-          <div className="w-full md:w-5/12 text-center">
-            <div className="h-16 mb-2 border-b-2 border-gray-400"></div>
-            <p className="font-bold text-gray-800 uppercase text-sm">FIRMA CLIENTE</p>
-          </div>
-        </div>*/}
-
-        {/* BOTONERA: Ajustada para móviles */}
+        {/* BOTONERA */}
         <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 flex flex-col gap-3 no-print z-50">
           <button
             onClick={imprimirPDF}
